@@ -17,8 +17,13 @@ def load_CIFAR10(ROOT):
   xs = []
   ys = []
   for b in range(1,6):
-    f = os.path.join(ROOT, 'data_batch_%d' % (b, ))
+    # join directory path and file name
+    f = os.path.join(ROOT, 'data_batch_{}'.format(b, ))
+    
+    # load X and Y values from file
     X, Y = load_CIFAR_batch(f)  # Binary encoding for python 3
+    
+    # append values to list
     xs.append(X)
     ys.append(Y)    
   Xtr = np.concatenate(xs)
