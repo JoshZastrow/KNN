@@ -54,36 +54,56 @@ def svm_loss_naive(W, X, y, reg):
 
 
 def svm_loss_vectorized(W, X, y, reg):
-    """
-    Structured SVM loss function, vectorized implementation.
-
-    Inputs and outputs are the same as svm_loss_naive.
-    """
+ 
     loss = 0.0
-    dW = np.zeros(W.shape)  # initialize the gradient as zero
+    dW = np.zeros(W.shape)  # initialize the gradient as zero    
+    '''
+    Trains Weights on an SVM Linear Classifier
+        Args:
+            W: [k, N] matrix - classes by features matrix
+            X: [N, M] matrix - features by examples matrix
+            Y: [M, 1] matrix - example(k class) by 1 matrix
 
-    ##########################################################################
-    # TODO:                                                                     #
-    # Implement a vectorized version of the structured SVM loss, storing the    #
-    # result in loss.                                                           #
-    ##########################################################################
-    pass
-    ##########################################################################
-    #                             END OF YOUR CODE                              #
-    ##########################################################################
+        Returns:
+            loss: loss score (how many wrong-classes had better score)
+            dW: gradient of weights
+    '''
 
-    ##########################################################################
-    # TODO:                                                                     #
-    # Implement a vectorized version of the gradient for the structured SVM     #
-    # loss, storing the result in dW.                                           #
-    #                                                                           #
-    # Hint: Instead of computing the gradient from scratch, it may be easier    #
-    # to reuse some of the intermediate values that you used to compute the     #
-    # loss.                                                                     #
-    ##########################################################################
-    pass
-    ##########################################################################
-    #                             END OF YOUR CODE                              #
-    ##########################################################################
+    # Initialize gradients and get sizes:
+    dW = np.zeros_like(W)
+    examples = X.shape[1]
+
+    delta = 1  # how different the scores need to be
+
+    # Scores for each class, each example
+    hypothesis = np.dot(W, X)  # [K, M] = 10 x 45000
+
+    # Correct score for each example
+    correct_scores = hypothesis[y, np.arange(examples)]  # 1 X 45000
+
+    # Score difference between wrong and right classes
+    diff = hypothesis - correct_scores + delta  # 10 X 45000
+
+    # Cost function: wrong classes that scored higher than correct class
+    cost = np.maximum(np.zeros_like(diff), diff)
+
+    # loss function
+    loss = 1 / examples * np.sum(cost) + .5 * reg * np.sum(W**2)
+
+    # Gradient Calculations
+    #################################################################
+
+    grad = cost
+
+    # Gradient Calculation--convert wrong scores to 1's
+    grad[diff > 0] = 1  # 10 x 45000 (classes x examples)
+
+    # Total each examples tallied score
+    diff_total = np.sum(grad, axis=0)  # 1 X 45000
+
+    # Multiply the instances of a wrong score with the total
+    grad[y, np.arange(examples)] = - diff_total[np.arange(examples)]
+
+    dW = 1 / examples * np.dot(grad, X.T) + reg * W
 
     return loss, dW
