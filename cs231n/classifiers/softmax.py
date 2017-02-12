@@ -18,7 +18,7 @@ def softmax_loss_vectorized(W, X, y, reg):
     # Initialize weights, loss, get dataset size
     dW = np.zeros_like(W)
     loss = 0.0
-    N = y.shape
+    N = y.shape[0]
 
     # Perform Softmax
     #################################################################
