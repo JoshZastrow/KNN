@@ -43,20 +43,28 @@ def svm_loss_naive(W, X, y, reg):
             if margin > 0:
                 loss += margin
 
-    # Right now the loss is a sum over all training examples, but we want it
-    # to be an average instead so we divide by num_train.
-    loss /= num_train
+                # Calculate the gradient of this example's class
+                # should be # incorrect classes * x but this is a loop
+                dW[j, :] += X[:, i].T
 
-    # Add regularization to the loss.
-    loss += 0.5 * reg * np.sum(W * W)
+                # Reiove the gradient from the correct class
+                dW[y[i], :] -= X[:, i].T
 
+    # divide the total loss by the number of training examples (average loss)
+    loss = loss / num_train
+    dW = dW / num_train
+
+    # Add regularization term (1/2 * lambda * Sum of Weights ^ 2)
+    loss += 0.5 * reg * np.sum(W**2)
+    dW += reg + np.sum(W * W)
+    # return the loss value and the gradient as a tuple
     return loss, dW
 
 
 def svm_loss_vectorized(W, X, y, reg):
- 
+
     loss = 0.0
-    dW = np.zeros(W.shape)  # initialize the gradient as zero    
+    dW = np.zeros(W.shape)  # initialize the gradient as zero
     '''
     Trains Weights on an SVM Linear Classifier
         Args:
