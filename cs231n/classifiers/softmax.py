@@ -75,20 +75,13 @@ def softmax_loss_vectorized(W, X, y, reg):
     # D = X.shape[0]  # Dimensions/Features
     # K = W.shape[0]  # Classes
 
-    # Perform Softmax
-    #################################################################
-    # print('\n\nSample set, {} classes {} example(s):\n '.format(K, N))
-    # print('Weights:\n{}\n\n'.format(W[:K, :N]))
-    # print('Examples:\n{}\n\n'.format(X[:D, :N]))
-    # print('Labels:\n{}\n\n'.format(y[:N]))
-
     # Generate a linear classifier scores
     scores = W.dot(X)
 
     # Normalize, so max score is 0 per class
     scores -= np.amax(scores, axis=0).reshape((1, N))
 
-    # Sum the scores for the loss function
+    # Sum the scores for the loss function, using softmax function
     prob = np.exp(scores) / np.exp(scores).sum(axis=0, keepdims=True)
     # print('Softmax applied to scores:\n{}'.format(prob[:, :]))
 
