@@ -40,6 +40,7 @@ class LinearClassifier:
         # Run stochastic gradient descent to optimize W
         loss_history = []
         batch_start = 0
+        
         for it in range(num_iters):
 
             X_batch = None
@@ -56,16 +57,18 @@ class LinearClassifier:
             # Hint: Use np.random.choice to generate indices. Sampling with         #
             # replacement is faster than sampling without replacement.              #
             #########################################################################
-
+            print('\nTraining Linear Classifier, stochastic gradient descent...\n\n')
+            
             # Sample a batch of elements from training data:
-            batch_end = batch_start + batch_size
-            X_batch = X[batch_start:batch_end, :]
-            y_batch = y[batch_start:batch_end, :]
-            print('X batch size: ', X_batch.shape(), '\n'
-                  'y batch size: ', y_batch.shape())
-
-
-
+            indices = np.random.choice(num_train, batch_size)
+            print('Random index chosen for training set:\t', indices)
+            
+            # Create batch from dataset
+            x_batch = X[indices]
+            y_batch = y[indices]
+            print('X batch size of indices:\t', x_batch.shape)
+            
+            
             #########################################################################
             #                       END OF YOUR CODE                                #
             #########################################################################
@@ -79,10 +82,11 @@ class LinearClassifier:
             # TODO:                                                                 #
             # Update the weights using the gradient and the learning rate.          #
             #########################################################################
-            pass
-        #########################################################################
-        #                       END OF YOUR CODE                                #
-        #########################################################################
+            self.W += -learning_rate * grad
+
+            #########################################################################
+            #                       END OF YOUR CODE                                #
+            #########################################################################
 
         if verbose and it % 100 == 0:
             print('iteration {} / {}: loss {}'.format(it, num_iters, loss))
@@ -107,7 +111,9 @@ class LinearClassifier:
         # TODO:                                                                   #
         # Implement this method. Store the predicted labels in y_pred.            #
         ###########################################################################
-        pass
+        
+        y_pred = np.argsort(X.dot(self.W), axis=1)[:, -1]  # N x K array
+        print('\npredictions:\n', y_pred[:10])
         ###########################################################################
         #                           END OF YOUR CODE                              #
         ###########################################################################
