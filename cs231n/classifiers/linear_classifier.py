@@ -7,8 +7,8 @@ class LinearClassifier:
     def __init__(self):
         self.W = None
 
-    def train(self, X, y, learning_rate=1e-3, reg=1e-5, num_iters=100,
-              batch_size=200, verbose=False):
+    def train(self, X, y, learning_rate=1e-3, reg=1e-5, num_iters=300,
+              batch_size=200, verbose=True):
         """
         Train this linear classifier using stochastic gradient descent.
 
@@ -25,17 +25,17 @@ class LinearClassifier:
         Outputs:
         A list containing the value of the loss function at each training iteration.
         """
-
+        
+        
         dim, num_train = X.shape
-
-        num_classes = np.max(y) + 1  # assume y takes values 0...K-1 
+        
+        num_classes = int(np.max(y) + 1)  # assume y takes values 0...K-1 
                                      # where K is number of classes
 
         # Lazy implementation allows for the initilized weights be created anew each time
         if self.W is None:
             # lazily initialize W
             self.W = np.random.randn(num_classes, dim) * 0.001
-            print('Weight Matrix Shape: ', self.W.shape())
 
         # Run stochastic gradient descent to optimize W
         loss_history = []
@@ -57,17 +57,14 @@ class LinearClassifier:
             # Hint: Use np.random.choice to generate indices. Sampling with         #
             # replacement is faster than sampling without replacement.              #
             #########################################################################
-            print('\nTraining Linear Classifier, stochastic gradient descent...\n\n')
+            # print('\nTraining Linear Classifier, stochastic gradient descent...\n\n')
             
-            # Sample a batch of elements from training data:
+            # create a {batch_size} array of elements between 0 and {num_train}
             indices = np.random.choice(num_train, batch_size)
-            print('Random index chosen for training set:\t', indices)
             
-            # Create batch from dataset
-            x_batch = X[indices]
+            # Create batch from dataset 
+            X_batch = X[:, indices]
             y_batch = y[indices]
-            print('X batch size of indices:\t', x_batch.shape)
-            
             
             #########################################################################
             #                       END OF YOUR CODE                                #
@@ -88,8 +85,8 @@ class LinearClassifier:
             #                       END OF YOUR CODE                                #
             #########################################################################
 
-        if verbose and it % 100 == 0:
-            print('iteration {} / {}: loss {}'.format(it, num_iters, loss))
+            if verbose and it % 100 == 0:
+                print('iteration {} / {}: loss {:07.02f}'.format(it, num_iters, loss))
 
         return loss_history
 
@@ -112,8 +109,7 @@ class LinearClassifier:
         # Implement this method. Store the predicted labels in y_pred.            #
         ###########################################################################
         
-        y_pred = np.argsort(X.dot(self.W), axis=1)[:, -1]  # N x K array
-        print('\npredictions:\n', y_pred[:10])
+        y_pred = np.argmax(np.dot(self.W, X), axis=0)  # K x N array
         ###########################################################################
         #                           END OF YOUR CODE                              #
         ###########################################################################

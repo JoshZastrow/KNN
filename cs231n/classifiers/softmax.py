@@ -72,31 +72,30 @@ def softmax_loss_vectorized(W, X, y, reg):
     loss = 0.0
     # Parameters
     N = X.shape[1]  # Training Examples
-    # D = X.shape[0]  # Dimensions/Features
-    # K = W.shape[0]  # Classes
 
     # Generate a linear classifier scores
     scores = W.dot(X)
 
     # Normalize, so max score is 0 per class
-    scores -= np.amax(scores, axis=0).reshape((1, N))
+    scores -= np.amax(scores, axis=0, keepdims=True).reshape((1, N))
 
     # Sum the scores for the loss function, using softmax function
     prob = np.exp(scores) / np.exp(scores).sum(axis=0, keepdims=True)
-    # print('Softmax applied to scores:\n{}'.format(prob[:, :]))
 
     # Get the probabilities for the correct class label
     prob_y = prob[y, np.arange(N)]
-    # print('\nCorrect Score probability:\n{}'.format(prob_y[:]))
 
     # Cross Entropy Loss Function
-    loss = 1 / N * np.sum(-np.log(prob_y)) + 0.5 * reg * np.sum(W**2)
+    loss = np.mean(-np.log(prob_y)) + 0.5 * reg * np.sum(W**2)
 
     # print('Loss value: ', loss)
     prob[y, np.arange(N)] += 1
 
-    # Gradient,
-    dW = np.dot(prob, X.T)  # K X N * N X D = K X D
+    # Gradient
+    ind = np.zeros_like(prob)
+    ind[y, np.arange(N)] = 1
+    
+    dW = np.dot((prob - ind), X.T)  # K X N * N X D = K X D
     dW /= -N  # divide by N examples
     dW += reg * W
 
