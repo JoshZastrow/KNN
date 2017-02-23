@@ -70,39 +70,43 @@ def softmax_loss_vectorized(W, X, y, reg):
     # Initialize weights, loss, get dataset size
     dW = np.zeros_like(W)
     loss = 0.0
+    
     # Parameters
-    N = X.shape[1]  # Training Examples
+    N = X.shape[1]  # Number of Training Examples
 
     # Generate a linear classifier scores
     scores = W.dot(X)
-    print('\nInitial Scores (Sample):\n', scores[:,:10])
           
-    # Normalize, so max score is 0 per class
-    scores -= np.amax(scores, axis=0, keepdims=True).reshape((1, N))
-    print('\nNormalized Scores (Sample):\n', scores[:,:10])
+    # Normalize, so max score of each class is 0
+    scores -= np.amax(scores, axis=0, keepdims=True)
     
     # Sum the scores for the loss function, using softmax function
     prob = np.exp(scores) / np.exp(scores).sum(axis=0, keepdims=True)
-    print('\nScore Probabilities (Sample):\n', prob[:,:10])
     
     # Get the probabilities for the correct class label
     prob_y = prob[y, np.arange(N)]
-    print('\nScore Probabilities of Correct Classes(Sample):\n', prob_y[:10])
-    print('\nNegative Log of probabilities:\n', -np.log(prob_y)[:10])
           
-    # Cross Entropy Loss Function
+    # Cross Entropy Loss Functions
     loss = np.mean(-np.log(prob_y)) + 0.5 * reg * np.sum(W**2)
 
-    # print('Loss value: ', loss)
     prob[y, np.arange(N)] += 1
 
-    # Gradient
+    # Gradient (1 where correct class label is)
     ind = np.zeros_like(prob)
     ind[y, np.arange(N)] = 1
-    
+          
     dW = np.dot((prob - ind), X.T)  # K X N * N X D = K X D
-    dW /= -N  # divide by N examples
+    dW /= N  # divide by N examples
     dW += reg * W
+    
+    # print('\nNormalized Scores (Sample):\n', scores[:,:10])    
+    # print('\nSum of class scores:\n', scores.sum(axis=0, keepdims=True)[:10])
+    # print('\nSum of class scores, exponentiated:\n', np.exp(scores).sum(axis=0, keepdims=True))
+    # print('\nScore Probabilities (Sample):\n', prob[:,:10])
+    # print('\nCheck that probabilities sum to 1:\n', prob.sum(axis=0))
+    # print('\nScore Probabilities of Correct Classes(Sample):\n', prob_y[:10])
+    # print('\nNegative Log of probabilities:\n', -np.log(prob_y)[:10])
+    
 
     return loss, dW
 
@@ -142,7 +146,7 @@ def numerical_gradient(f, x):
 def test_softmax():
 
     # Parameters
-    N = 1  # Training Example size (of 1)
+    N = 10  # Training Example size (of 1)
     D = 30  # Dimensions/Features
     K = 5  # Classes
 
@@ -153,5 +157,4 @@ def test_softmax():
     r = 5
 
     softmax_loss_vectorized(W, X, y, r)
-
 # test_softmax()
