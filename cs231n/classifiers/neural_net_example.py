@@ -173,29 +173,29 @@ class TwoLayerNet(object):
     for it in xrange(num_iters):
 
 
-        #########################################################################
-        # TODO: Create a random minibatch of training data and labels, storing  #
-        # them in X_batch and y_batch respectively.                             #
-        #########################################################################
+        #######################################################################
+        # TODO: Create a random minibatch of training data and labels, storing
+        # them in X_batch and y_batch respectively.
+        #######################################################################
         batch_indicies = np.random.choice(num_train,
-                                        batch_size,
-                                        replace=False)
+                                          batch_size,
+                                          replace=False)
         X_batch = X[batch_indicies]
         y_batch = y[batch_indicies]
-        #########################################################################
-        #                             END OF YOUR CODE                          #
-        #########################################################################
+        #######################################################################
+        #                             END OF YOUR CODE                        #
+        #######################################################################
 
         # Compute loss and gradients using the current minibatch
         loss, grads = self.loss(X_batch, y=y_batch, reg=reg)
         loss_history.append(loss)
 
-        #########################################################################
-        # TODO: Use the gradients in the grads dictionary to update the         #
-        # parameters of the network (stored in the dictionary self.params)      #
-        # using stochastic gradient descent. You'll need to use the gradients   #
-        # stored in the grads dictionary defined above.                         #
-        #########################################################################
+        #######################################################################
+        # TODO: Use the gradients in the grads dictionary to update the       #
+        # parameters of the network (stored in the dictionary self.params)    #
+        # using stochastic gradient descent. You'll need to use the gradients #
+        # stored in the grads dictionary defined above.                       #
+        #######################################################################
       for variable in self.params:
           self.params[variable] -= learning_rate*grads[variable]
       #########################################################################

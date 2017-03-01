@@ -324,12 +324,32 @@ class TwoLayerNet(object):
         """
         y_pred = None
 
-        #######################################################################
-        # TODO: Implement this function; it should be VERY simple!                #
-        #######################################################################
+        # ReLU function:
+        def ReLU(x):
+            return max(0, x)
+
+        # SoftMax Function
+        def softMax(z):
+            # preserve numerical stability
+            z -= np.amax(z, axis=1, keepdims=True)
+            return (np.exp(z) / np.exp(z).sum(axis=1, keepdims=True))
 
         #######################################################################
-        #                              END OF YOUR CODE                           #
+        # TODO: Implement this function; it should be VERY simple!            #
+        #######################################################################
+        # Unpack variables from the params dictionary
+        W1, b1 = self.params['W1'], self.params['b1']
+        W2, b2 = self.params['W2'], self.params['b2']
+        N, D = X.shape
+
+        X1 = np.dot(X, W1) + b1  # M x H
+        L1 = ReLU(X1)
+        L2 = np.dot(L1, W2) + b2  # M x C
+        Fx = softMax(L2)
+
+        y_pred = np.argmax(Fx, axis=1)
+        #######################################################################
+        #                              END OF YOUR CODE                       #
         #######################################################################
 
         return y_pred
