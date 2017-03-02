@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-
+import math
 
 class Unit(object):
     """
@@ -124,7 +124,7 @@ class TwoLayerNet(object):
 
         # ReLU function:
         def ReLU(x):
-            return max(0, x)
+            return np.maximum(x, 0)
 
         # SoftMax Function
         def softMax(z):
@@ -142,19 +142,18 @@ class TwoLayerNet(object):
         #######################################################################
         # TODO: Perform the forward pass, computing the class Fx for the input. #
         # Store the result in the Fx variable, which should be an array of      #
-        # shape (N, C).                                                             #
+        # shape (N, C).                                                        #
         #######################################################################
 
         # f(X, W) = W2 * max(0, W1 * X + b1) + b2
-        X1 = np.dot(X, W1)   # W1 * X
-        X1 = X1 + b1         # W1 * X + b1
-        L1 = ReLU(X1)        # max(0, W1 * X + b1)
-        X2 = np.dot(L1, W2)  # W2 * max(0, W1 * X + b1)
-        Fx = X2 + b2     # W2 * max(0, W1 * X + b1) + b2
+        z1 = np.dot(X, W1)   # W1 * X
+        z1 = z1 + b1         # W1 * X + b1
+        a1 = ReLU(z1)        # max(0, W1 * X + b1)
+        z2 = np.dot(a1, W2)  # W2 * max(0, W1 * X + b1)
+        a2 = z2 + b2     # W2 * max(0, W1 * X + b1) + b2
 
-        # Convert hypothesis Fx to normalized probabilities
-        Fx = softMax(Fx)
-
+        # output
+        Fx = a2
         #######################################################################
         #                              END OF YOUR CODE                         #
         #######################################################################
@@ -173,15 +172,14 @@ class TwoLayerNet(object):
         # regularization loss by 0.5                                               #
         #######################################################################
 
+        # Convert to normalized probabilities
+        Fx = softMax(Fx)
         # Keep only estimated probabilities for correct class
         margin = Fx[np.arange(N), y]
 
-        # Cross Entropy  Loss - log probabilities
+        # Cross Entropy Loss - log probabilities
         data_loss = -np.mean(np.log(margin))
-
-        # Regularization term
         wght_loss = 0.5 * reg * (np.sum(W1**2) + np.sum(W2**2))
-
         loss = data_loss + wght_loss
 
         #######################################################################
@@ -201,12 +199,26 @@ class TwoLayerNet(object):
         Y[np.arange(N), y] = 1
 
         # Back prop through Fx
-        dFx = Fx.copy() - Y  # M x C
-        dW2 = np.dot(L1.T, dFx) / N + reg * W2  # H x M * M x C
-        db2 = np.dot(dFx.T, np.ones(L1.shape[0])) / N  # C x M * M x 1
-        dL1 = np.dot(dFx, W2.T)  # M x C * C * H --> M x H
-        dW1 = np.dot(X.T, dL1 * (L1 > 0)) / N + reg * W1  # D x H
-        db1 = np.dot(np.ones((N, 1).T, dL1 * (L1 > 0))) / N  # M * M x H
+        dFx = (Fx.copy() - Y) / N  # M x C
+
+        #####################################################################
+        # X1 [M x D]    W1 [D x H]    b1 [M x 1]
+        # a1 [M x H]    W2 [H x C]    b2 [H x 1]
+        # a2 [M x C]    Fx [M x C]
+        # da2 [M x C]   dFx [M x C]
+        # da1 [M x H]   dW2 [H x C]   db2 [H x 1]
+        # dX1 [M x D]   dW1 [D x H]   db1 [M x 1]
+        #####################################################################
+
+        #
+        dz2 = dFx  # M x C
+        da1 = np.dot(dz2, W2.T)  # M x C * C * H --> M x H
+        dW2 = np.dot(a1.T, dz2) + reg * W2  # H x M * M x C
+        db2 = np.sum(dz2, axis=0)  # C x M * M x 1
+
+        dz1 = da1 * (a1 > 0)  # Backprop Relu
+        dW1 = np.dot(X.T, dz1) + reg * W1  # D x H
+        db1 = np.sum(dz1, axis=0)  # M * M x H
 
         grads['W2'] = dW2
         grads['b2'] = db2
@@ -243,6 +255,7 @@ class TwoLayerNet(object):
 
         num_train = X.shape[0]
         iterations_per_epoch = max(num_train / batch_size, 1)
+        val_acc = 0
 
         # Use SGD to optimize the parameters in self.model
         loss_history = []
@@ -326,7 +339,7 @@ class TwoLayerNet(object):
 
         # ReLU function:
         def ReLU(x):
-            return max(0, x)
+            return np.maximum(x, 0)
 
         # SoftMax Function
         def softMax(z):
@@ -342,9 +355,9 @@ class TwoLayerNet(object):
         W2, b2 = self.params['W2'], self.params['b2']
         N, D = X.shape
 
-        X1 = np.dot(X, W1) + b1  # M x H
-        L1 = ReLU(X1)
-        L2 = np.dot(L1, W2) + b2  # M x C
+        z1 = np.dot(X, W1) + b1  # M x H
+        a1 = ReLU(z1)
+        L2 = np.dot(a1, W2) + b2  # M x C
         Fx = softMax(L2)
 
         y_pred = np.argmax(Fx, axis=1)

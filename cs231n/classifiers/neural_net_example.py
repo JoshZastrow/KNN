@@ -116,18 +116,28 @@ class TwoLayerNet(object):
     # grads['W1'] should store the gradient on W1, and be a matrix of same size #
     #############################################################################
 
-    # Back propagation
-    dFx = Fx - Y
-    dW2 = ((dFx.T).dot(L1)).T / N + reg * W2  # [C x M * M x H],T -> H x C
-    db2 = (dFx.T).dot(np.ones(L1.shape[0])) / N
-    dL1 = dFx.dot(W2.T)
-    dW1 = (((dL1 * (L1 > 0)).T).dot(X)).T / N + reg * W1  # M x H
-    db1 = (((dL1 * (L1 > 0)).T).dot(np.ones(X.shape[0]))).T / N
+    # compute the gradient on scores
+    dFx = probs
+    dFx[range(N),y] -= 1
+    dFx /= N
 
-    grads['W2'] = dW2
-    grads['b2'] = db2
-    grads['W1'] = dW1
-    grads['b1'] = db1
+    # W2 and b2
+    grads['W2'] = np.dot(a1.T, dFx)
+    grads['b2'] = np.sum(dFx, axis=0)
+
+    # next backprop into hidden layer
+    dhidden = np.dot(dFx, W2.T)
+
+    # backprop the ReLU non-linearity
+    dhidden[a1 <= 0] = 0
+
+    # finally into W,b
+    grads['W1'] = np.dot(X.T, dhidden)
+    grads['b1'] = np.sum(dhidden, axis=0)
+
+    # add regularization gradient contribution
+    grads['W2'] += reg * W2
+    grads['W1'] += reg * W1
 
     #############################################################################
     #                              END OF YOUR CODE                             #
