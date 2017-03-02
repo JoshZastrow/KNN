@@ -166,10 +166,13 @@ class TwoLayerNet(object):
     - verbose: boolean; if true print progress during optimization.
     """
 
-    #Dropout
-    Binom_variables = np.random.choice([0, 1], size=X.shape, p=[dropout_fraction,1-dropout_fraction])
-    X = (X*Binom_variables)/(1-dropout_fraction)
+    # Dropout on input
+    Binom_variables = np.random.choice(
+        [0, 1],
+        size=X.shape,
+        p=[dropout_fraction, 1 - dropout_fraction])
 
+    X = (X * Binom_variables) / (1 - dropout_fraction)
 
     num_train = X.shape[0]
     iterations_per_epoch = max(num_train / batch_size, 1)
