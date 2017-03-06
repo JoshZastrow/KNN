@@ -95,7 +95,10 @@ class TwoLayerNet(object):
         - Fx_size: The number of classes C.
         """
         self.params = {}
-        self.params['W1'] = std * np.random.randn(input_size, hidden_size)
+        # Initialization for ReLU Neurons
+        sqrt = math.sqrt(2 / input_size)  # as compared to STD
+        self.params['W1'] = np.random.randn(input_size, hidden_size)
+        self.params['W1'] *= sqrt
         self.params['b1'] = np.zeros(hidden_size)
         self.params['W2'] = std * np.random.randn(hidden_size, Fx_size)
         self.params['b2'] = np.zeros(Fx_size)
@@ -107,7 +110,7 @@ class TwoLayerNet(object):
 
         Inputs:
         - X: Input data of shape (N, D). Each X[i] is a training sample.
-        - y: Vector of training labels. y[i] is the label for X[i], and each y[i] is
+        - y: Vector of training labels. y[i] is the label for X[i], and each y[i]
           an integer in the range 0 <= y[i] < C. This parameter is optional; if it
           is not passed then we only return Fx, and if it is passed then we
           instead return the loss and gradients.
@@ -147,7 +150,7 @@ class TwoLayerNet(object):
         # shape (N, C).                                                        #
         #######################################################################
 
-        # Forward Pass
+        # Forward Pass with dropout
         # f(X, W) = W2 * max(0, W1 * X + b1) + b2
         z1 = np.dot(X, W1) + b1
         drop1 = np.random.choice([1, 0], size=z1.shape, p=[p, 1 - p]) / p
@@ -169,6 +172,7 @@ class TwoLayerNet(object):
 
         # Convert to normalized probabilities
         Fx = softMax(Fx)
+
         # Keep only estimated probabilities for correct class
         margin = Fx[np.arange(N), y]
 
@@ -184,9 +188,6 @@ class TwoLayerNet(object):
         Y = np.zeros_like(Fx)
         Y[np.arange(N), y] = 1
 
-        # Back prop through Fx
-        dFx = (Fx.copy() - Y) / N  # M x C
-
         #####################################################################
         # X1 [M x D]    W1 [D x H]    b1 [M x 1]
         # a1 [M x H]    W2 [H x C]    b2 [H x 1]
@@ -195,14 +196,16 @@ class TwoLayerNet(object):
         # da1 [M x H]   dW2 [H x C]   db2 [H x 1]
         # dX1 [M x D]   dW1 [D x H]   db1 [M x 1]
         #####################################################################
+        # Backproogation
+        #####################################################################
 
-        # Backprop
-
-        dz2 = drop2 * dFx  # M x C
-        da1 = np.dot(dz2, W2.T)  # M x C * C * H --> M x H
+        dFx = (Fx.copy() - Y) / N  # M x C
+        da2 = 1 * dFx
+        dz2 = drop2 * da2  # M x C
         dW2 = np.dot(a1.T, dz2) + reg * W2  # H x M * M x C
         db2 = np.sum(dz2, axis=0)  # C x M * M x 1
 
+        da1 = np.dot(dz2, W2.T)  # M x C * C * H --> M x H
         dz1 = da1 * (a1 > 0) * drop1  # Backprop Relu
         dW1 = np.dot(X.T, dz1) + reg * W1  # D x H
         db1 = np.sum(dz1, axis=0)  # M * M x H
