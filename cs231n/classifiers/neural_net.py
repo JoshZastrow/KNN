@@ -4,18 +4,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 
-class Unit(object):
-    """
-    A unit (variable) in a neural network. Each unit would carry a forward
-    pass value and a gradient value.
-    """
-
-    def __init__(self, value=0.0, grad=0.0):
-        self.value = value
-        self.grad = grad
-
-# Create some gates to be used in the net (implementation put on hold...)
-
 class TwoLayerNet(object):
 
     """
@@ -60,7 +48,7 @@ class TwoLayerNet(object):
         self.params['W2'] *= sqrt_layer2
         self.params['b2'] = np.zeros(Fx_size)
 
-    def loss(self, X, y=None, reg=0.0, p=1.0):
+    def loss(self, X, y=None, reg=0.01, p=1.0):
         """
         Compute the loss and gradients for a two layer fully connected neural
         network.
@@ -156,10 +144,11 @@ class TwoLayerNet(object):
         # Backproogation
         #####################################################################
 
-        dFx = (Fx.copy() - Y) / N  # M x C
+        dFx = (Fx.copy() - Y) / N # M x C
         da2 = 1 * dFx
+
         dz2 = drop2 * da2  # M x C
-        dW2 = np.dot(a1.T, dz2)  # H x M * M x C
+        dW2 = np.dot(a1.T, dz2) # H x M * M x C
         db2 = np.sum(dz2, axis=0)  # C x M * M x 1
 
         da1 = np.dot(dz2, W2.T)  # M x C * C * H --> M x H
@@ -175,7 +164,7 @@ class TwoLayerNet(object):
         # Add regularization terms
 
         grads['W2'] += reg * W2
-        # grads['W1'] += reg * W1
+        grads['W1'] += reg * W1
 
         #######################################################################
         #                              END OF YOUR COD                        #
@@ -331,8 +320,9 @@ class TwoLayerNet(object):
 
         z1 = np.dot(X, W1) + b1  # M x H
         a1 = ReLU(z1)
-        L2 = np.dot(a1, W2) + b2  # M x C
-        Fx = softMax(L2)
+        z2 = np.dot(a1, W2) + b2  # M x C
+        a2 = z2
+        Fx = softMax(a2)
 
         y_pred = np.argmax(Fx, axis=1)
         #######################################################################
