@@ -16,52 +16,6 @@ class Unit(object):
 
 # Create some gates to be used in the net (implementation put on hold...)
 
-
-class add_gate(object):
-
-    def __init__(self):
-        self.x = Unit()
-        self.y = Unit()
-
-    def forward(self, x, y):
-        self.x = x
-        self.y = y
-        self.out = Unit(x.value + y.value, 0.0)
-
-    def backward(self):
-        self.x.grad += 1 * self.out.grad
-        self.y.grad += 1 * self.out.grad
-
-
-class mul_gate(object):
-
-    def __init__(self):
-        self.x = Unit()
-        self.y = Unit()
-
-    def forward(self, x, y):
-        self.x = x
-        self.y = y
-        self.out = Unit(x.value * y.value, 0.0)
-
-    def backward(self):
-        self.x.grad += self.y.value * self.out.grad
-        self.y.grad += self.x.value * self.out.grad
-
-
-class ReLu_gate(object):
-
-    def __init__(self):
-        self.x = Unit()
-
-    def forward(self, x):
-        self.x = x
-        self.out = Unit(max(0, self.x), 0.0)
-
-    def backward(self):
-        pass  # to be continued...
-
-
 class TwoLayerNet(object):
 
     """
@@ -96,11 +50,14 @@ class TwoLayerNet(object):
         """
         self.params = {}
         # Initialization for ReLU Neurons
-        sqrt = math.sqrt(2 / input_size)  # as compared to STD
+        sqrt_layer1 = math.sqrt(2 / input_size)  # as compared to STD
+        sqrt_layer2 = math.sqrt(2 / hidden_size)
         self.params['W1'] = np.random.randn(input_size, hidden_size)
-        self.params['W1'] *= sqrt
+        self.params['W1'] *= sqrt_layer1
         self.params['b1'] = np.zeros(hidden_size)
-        self.params['W2'] = std * np.random.randn(hidden_size, Fx_size)
+
+        self.params['W2'] = np.random.randn(hidden_size, Fx_size)
+        self.params['W2'] *= sqrt_layer2
         self.params['b2'] = np.zeros(Fx_size)
 
     def loss(self, X, y=None, reg=0.0, p=1.0):
@@ -202,12 +159,12 @@ class TwoLayerNet(object):
         dFx = (Fx.copy() - Y) / N  # M x C
         da2 = 1 * dFx
         dz2 = drop2 * da2  # M x C
-        dW2 = np.dot(a1.T, dz2) + reg * W2  # H x M * M x C
+        dW2 = np.dot(a1.T, dz2)  # H x M * M x C
         db2 = np.sum(dz2, axis=0)  # C x M * M x 1
 
         da1 = np.dot(dz2, W2.T)  # M x C * C * H --> M x H
         dz1 = da1 * (a1 > 0) * drop1  # Backprop Relu
-        dW1 = np.dot(X.T, dz1) + reg * W1  # D x H
+        dW1 = np.dot(X.T, dz1)   # D x H
         db1 = np.sum(dz1, axis=0)  # M * M x H
 
         grads['W2'] = dW2
@@ -215,11 +172,16 @@ class TwoLayerNet(object):
         grads['W1'] = dW1
         grads['b1'] = db1
 
+        # Add regularization terms
+
+        grads['W2'] += reg * W2
+        # grads['W1'] += reg * W1
+
         #######################################################################
         #                              END OF YOUR COD                        #
         #######################################################################
 
-        return loss, grads
+        return loss, grads, data_loss, wght_loss
 
     def train(self, X, y, X_val, y_val,
               learning_rate=1e-3, learning_rate_decay=0.95,
@@ -251,6 +213,8 @@ class TwoLayerNet(object):
         loss_history = []
         train_acc_history = []
         val_acc_history = []
+        W1_ratio = []
+        W2_ratio = []
 
         for it in range(num_iters):
             X_batch = None
@@ -272,8 +236,25 @@ class TwoLayerNet(object):
             ###################################################################
 
             # Compute loss and gradients using the current minibatch
-            loss, grads = self.loss(X_batch, y=y_batch, reg=reg, p=dropout_val)
+            loss, grads, dloss, wloss = self.loss(X_batch,
+                                                  y=y_batch,
+                                                  reg=reg, p=dropout_val)
             loss_history.append(loss)
+
+            # Track Update vs Weights ratio
+            # Calculate parameters
+            W1_vals = np.linalg.norm(self.params['W1'].ravel())
+            W2_vals = np.linalg.norm(self.params['W2'].ravel())
+            W1_grad = np.linalg.norm(learning_rate * grads['W1'].ravel())
+            W2_grad = np.linalg.norm(learning_rate * grads['W2'].ravel())
+
+            # Calculate Ratio
+            W1_new_ratio = W1_grad / W1_vals
+            W2_new_ratio = W2_grad / W2_vals
+
+            # Add ratio to list
+            W1_ratio.append(W1_new_ratio)
+            W2_ratio.append(W2_new_ratio)
 
             ###################################################################
             # TODO: Use the gradients in the grads dictionary to update the
@@ -283,14 +264,15 @@ class TwoLayerNet(object):
             ###################################################################
             for key in self.params:
                 self.params[key] -= learning_rate * grads[key]
+
             ###################################################################
             #                             END OF YOUR CODE                    #
             ###################################################################
 
             if verbose and it % 100 == 0:
                 print(
-                    'iteration {:d} / {:d}: loss {:05.2f}'
-                    .format(it, num_iters, loss))
+                    'iteration {:d} / {:d}: loss {:05.2f} ({:4.2f}|{:4.2f})'
+                    .format(it, num_iters, loss, dloss, wloss))
 
             # Every epoch, check train and val accuracy and decay learning
             # rate.
@@ -308,6 +290,8 @@ class TwoLayerNet(object):
             'loss_history': loss_history,
             'train_acc_history': train_acc_history,
             'val_acc_history': val_acc_history,
+            'W1_ratio_history': W1_ratio[31:],
+            'W2_ratio_history': W2_ratio[31:]
         }
 
     def predict(self, X):
