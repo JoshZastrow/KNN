@@ -38,14 +38,14 @@ class TwoLayerNet(object):
         """
         self.params = {}
         # Initialization for ReLU Neurons
-        sqrt_layer1 = math.sqrt(2 / input_size)  # as compared to STD
-        sqrt_layer2 = math.sqrt(2 / hidden_size)
+        sqrt_layer1 = math.sqrt(2 / input_size) *.001 # as compared to STD
+
         self.params['W1'] = np.random.randn(input_size, hidden_size)
-        self.params['W1'] *= sqrt_layer1
+        self.params['W1'] *= std * .01
         self.params['b1'] = np.zeros(hidden_size)
 
         self.params['W2'] = np.random.randn(hidden_size, Fx_size)
-        self.params['W2'] *= sqrt_layer2
+        self.params['W2'] *= std * 10
         self.params['b2'] = np.zeros(Fx_size)
 
     def loss(self, X, y=None, reg=0.01, p=1.0):
@@ -87,6 +87,7 @@ class TwoLayerNet(object):
         W2, b2 = self.params['W2'], self.params['b2']
         N, D = X.shape
 
+
         # Compute the forward pass
         Fx = None
         #######################################################################
@@ -95,15 +96,14 @@ class TwoLayerNet(object):
         # shape (N, C).                                                        #
         #######################################################################
 
-        # Forward Pass with dropout
-        # f(X, W) = W2 * max(0, W1 * X + b1) + b2
+        # Forward Pass with dropout --DROPOUT REMOVED
         z1 = np.dot(X, W1) + b1
         drop1 = np.random.choice([1, 0], size=z1.shape, p=[p, 1 - p]) / p
-        a1 = ReLU(z1) * drop1
+        a1 = ReLU(z1)  * drop1
 
         z2 = np.dot(a1, W2) + b2
         drop2 = np.random.choice([1, 0], size=z2.shape, p=[p, 1 - p]) / p
-        a2 = z2 * drop2
+        a2 = z2  * drop2
 
         # output
         Fx = a2
@@ -122,7 +122,7 @@ class TwoLayerNet(object):
         margin = Fx[np.arange(N), y]
 
         # Cross Entropy Loss - log probabilities
-        data_loss = -np.mean(np.log(margin))
+        data_loss = np.sum(-np.log(margin)) / N
         wght_loss = 0.5 * reg * (np.sum(W1**2) + np.sum(W2**2))
         loss = data_loss + wght_loss
 
@@ -133,26 +133,15 @@ class TwoLayerNet(object):
         Y = np.zeros_like(Fx)
         Y[np.arange(N), y] = 1
 
-        #####################################################################
-        # X1 [M x D]    W1 [D x H]    b1 [M x 1]
-        # a1 [M x H]    W2 [H x C]    b2 [H x 1]
-        # a2 [M x C]    Fx [M x C]
-        # da2 [M x C]   dFx [M x C]
-        # da1 [M x H]   dW2 [H x C]   db2 [H x 1]
-        # dX1 [M x D]   dW1 [D x H]   db1 [M x 1]
-        #####################################################################
-        # Backproogation
-        #####################################################################
-
         dFx = (Fx.copy() - Y) / N # M x C
-        da2 = 1 * dFx
-
-        dz2 = drop2 * da2  # M x C
+        dz2 = dFx * drop2
         dW2 = np.dot(a1.T, dz2) # H x M * M x C
-        db2 = np.sum(dz2, axis=0)  # C x M * M x 1
+        db2 = np.sum(dFx * N, axis=0)  # C x M * M x 1
 
-        da1 = np.dot(dz2, W2.T)  # M x C * C * H --> M x H
-        dz1 = da1 * (a1 > 0) * drop1  # Backprop Relu
+        da1 = np.dot(dFx, W2.T)  # M x C * C * H --> M x H
+        a1[a1 > 0] = 1
+        a1[a1 <= 0] = 0
+        dz1 = da1 * a1 * drop1
         dW1 = np.dot(X.T, dz1)   # D x H
         db1 = np.sum(dz1, axis=0)  # M * M x H
 
@@ -260,7 +249,7 @@ class TwoLayerNet(object):
 
             if verbose and it % 100 == 0:
                 print(
-                    'iteration {:d} / {:d}: loss {:05.2f} ({:4.2f}|{:4.2f})'
+                    'iteration {:d} / {:d}: loss {:08.4f} ({:8.4f}|{:8.4f})'
                     .format(it, num_iters, loss, dloss, wloss))
 
             # Every epoch, check train and val accuracy and decay learning

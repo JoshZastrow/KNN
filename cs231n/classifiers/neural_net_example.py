@@ -36,7 +36,7 @@ def two_layer_net(X, model, y=None, reg=0.0):
   nonlinearity after the first affine layer.
   The two layer net has the following architecture:
   input - fully connected layer - ReLU - fully connected layer - softmax
-  The outputs of the second fully-connected layer are the scores for each
+  The outputs of the second fully-connected layer are the Fx for each
   class.
   Inputs:
   - X: Input data of shape (N, D). Each X[i] is a training sample.
@@ -48,11 +48,11 @@ def two_layer_net(X, model, y=None, reg=0.0):
     - b2: Second layer biases; has shape (C,)
   - y: Vector of training labels. y[i] is the label for X[i], and each y[i] is
     an integer in the range 0 <= y[i] < C. This parameter is optional; if it
-    is not passed then we only return scores, and if it is passed then we
+    is not passed then we only return Fx, and if it is passed then we
     instead return the loss and gradients.
   - reg: Regularization strength.
   Returns:
-  If y not is passed, return a matrix scores of shape (N, C) where scores[i, c]
+  If y not is passed, return a matrix Fx of shape (N, C) where Fx[i, c]
   is the score for class c on input X[i].
   If y is not passed, instead return a tuple of:
   - loss: Loss (data loss and regularization loss) for this batch of training
@@ -66,31 +66,31 @@ def two_layer_net(X, model, y=None, reg=0.0):
   N, D = X.shape
   C = b2.shape[0]
   # compute the forward pass
-  scores = np.zeros((N, C))
+  Fx = np.zeros((N, C))
   #############################################################################
-  # TODO: Perform the forward pass, computing the class scores for the input. #
-  # Store the result in the scores variable, which should be an array of      #
+  # TODO: Perform the forward pass, computing the class Fx for the input. #
+  # Store the result in the Fx variable, which should be an array of      #
   # shape (N, C).                                                             #
   #############################################################################
 
   # use RelU f(x) = max (0, x)
-  #h1 = np.maximum(0, np.dot(X, W1) + b1)
-  #scores = np.dot(h1, W2) + b2
+  #a1 = np.maximum(0, np.dot(X, W1) + b1)
+  #Fx = np.dot(a1, W2) + b2
 
-  dot1 = np.dot(X, W1)
-  add1 = dot1 + b1
-  h1 = np.maximum(0, add1)
+  z1 = np.dot(X, W1)
+  add1 = z1 + b1
+  a1 = np.maximum(0, add1)
 
-  dot2 = np.dot(h1, W2)
-  add2 = dot2 + b2
-  scores = add2
+  z2 = np.dot(a1, W2)
+  add2 = z2 + b2
+  Fx = add2
   #############################################################################
   #                              END OF YOUR CODE                             #
   #############################################################################
 
   # If the targets are not given then jump out, we're done
   if y is None:
-    return scores
+    return Fx
 
   # compute the loss
   loss = None
@@ -101,9 +101,9 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # classifier loss. So that your results match ours, multiply the            #
   # regularization loss by 0.5                                                #
   #############################################################################
-  scores -= np.max(scores, axis = 1).reshape(N, 1)
-  normalize_scores = np.exp(scores) / np.sum(np.exp(scores), axis = 1).reshape(N, 1)
-  loss = np.sum(- np.log(normalize_scores[range(N), y]))
+  Fx -= np.max(Fx, axis = 1).reshape(N, 1)
+  normalize_Fx = np.exp(Fx) / np.sum(np.exp(Fx), axis = 1).reshape(N, 1)
+  loss = np.sum(- np.log(normalize_Fx[range(N), y]))
   loss = loss / N + 0.5 * reg * np.sum(W1 * W1) + 0.5 * reg * np.sum(W2 * W2)
   #############################################################################
   #                              END OF YOUR CODE                             #
@@ -116,23 +116,21 @@ def two_layer_net(X, model, y=None, reg=0.0):
   # and biases. Store the results in the grads dictionary. For example,       #
   # grads['W1'] should store the gradient on W1, and be a matrix of same size #
   #############################################################################
-  dscores = normalize_scores
-  dscores[range(N), y] -= 1
+  dFx = normalize_Fx
+  dFx[range(N), y] -= 1
 
+  grads['b2'] = np.mean(dFx, axis=0)
 
-  grads['b2'] = np.mean(dscores, axis=0)
+  dz2 = dFx / N
+  grads['W2'] = a1.T.dot(dz2) + reg * W2
 
-  ddot2 = dscores / N
-  grads['W2'] = h1.T.dot(ddot2) + reg * W2
-
-  dh1 = ddot2.dot(W2.T)
+  da1 = dz2.dot(W2.T)
   add1[add1 > 0] = 1
   add1[add1 <= 0] = 0
-  dadd1 = add1 * dh1
-  grads['b1'] = np.sum(dadd1, axis=0)
+  dz1 = add1 * da1
 
-  ddot1 = dadd1
-  grads['W1'] = X.T.dot(ddot1) + reg * W1
+  grads['b1'] = np.sum(dz1, axis=0)
+  grads['W1'] = X.T.dot(dz1) + reg * W1
 
   #############################################################################
   #                              END OF YOUR CODE                             #
