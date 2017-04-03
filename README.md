@@ -9,6 +9,8 @@ Concepts covered:
 - [Backpropogation](https://github.com/JoshZastrow/Machine-Learning-Image-Classifiers/blob/master/cs231n/classifiers/neural_net.py)
 - [Cross Entropy Loss](https://github.com/JoshZastrow/Machine-Learning-Image-Classifiers/blob/master/softmax.ipynb)
 - [Softmax Linear Classifier](https://github.com/JoshZastrow/Machine-Learning-Image-Classifiers/blob/master/softmax.ipynb)
+
+See Conv-Nets Repository for examples on below:
 - L2 Regularization
 - Batch Processing (Batch Gradient Descent)
 - Stochastic Gradient Descent
